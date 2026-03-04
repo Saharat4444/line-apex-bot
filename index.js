@@ -20,16 +20,35 @@ app.post('/webhook',
       if (event.type !== 'message') continue;
       if (event.message.type !== 'text') continue;
 
-      // ส่งไป APEX แบบไม่รอผล (fire and forget)
-      axios.post(process.env.APEX_URL, {
-        user_id:      event.source.userId,
-        user_message: event.message.text,
-        reply_token:  event.replyToken
-      }, {
-        headers: { 'Content-Type': 'application/json' },
-        timeout: 10000  // รอสูงสุด 10 วินาที
-      }).catch(err => console.error('APEX Error:', err.message));
+      try {
+        // ส่งไป APEX และรอรับ reply text กลับมา
+        const response = await axios.post(process.env.APEX_URL, {
+          user_id:      event.source.userId,
+          user_message: event.message.text,
+          reply_token:  event.replyToken
+        }, {
+          headers: { 'Content-Type': 'application/json' },
+          timeout: 8000
+        });
 
+        // ดึง reply จาก APEX
+        const replyText = response.data.reply_text || 'ได้รับข้อความแล้วครับ';
+
+        // Node.js ส่งกลับ LINE เอง
+        await lineClient.replyMessage(event.replyToken, {
+          type: 'text',
+          text: replyText
+        });
+
+      } catch (err) {
+        console.error('Error:', err.message);
+
+        // ถ้า APEX Error ยังตอบ LINE ได้
+        await lineClient.replyMessage(event.replyToken, {
+          type: 'text',
+          text: 'ขออภัย เกิดข้อผิดพลาดครับ'
+        }).catch(() => {});
+      }
     }
   }
 );
