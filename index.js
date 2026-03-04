@@ -20,18 +20,16 @@ app.post('/webhook',
       if (event.type !== 'message') continue;
       if (event.message.type !== 'text') continue;
 
-      try {
-        // ส่งเป็น JSON Body แทน Header
-        await axios.post(process.env.APEX_URL, {
-          user_id:      event.source.userId,
-          user_message: event.message.text,
-          reply_token:  event.replyToken
-        }, {
-          headers: { 'Content-Type': 'application/json' }
-        });
-      } catch (err) {
-        console.error('APEX Error:', err.message);
-      }
+      // ส่งไป APEX แบบไม่รอผล (fire and forget)
+      axios.post(process.env.APEX_URL, {
+        user_id:      event.source.userId,
+        user_message: event.message.text,
+        reply_token:  event.replyToken
+      }, {
+        headers: { 'Content-Type': 'application/json' },
+        timeout: 10000  // รอสูงสุด 10 วินาที
+      }).catch(err => console.error('APEX Error:', err.message));
+
     }
   }
 );
