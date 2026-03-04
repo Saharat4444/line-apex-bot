@@ -20,8 +20,11 @@ app.post('/webhook',
       if (event.type !== 'message') continue;
       if (event.message.type !== 'text') continue;
 
+      console.log('1. รับข้อความ:', event.message.text);
+
       try {
-        // ส่งไป APEX และรอรับ reply text กลับมา
+        console.log('2. กำลังส่งไป APEX...');
+
         const response = await axios.post(process.env.APEX_URL, {
           user_id:      event.source.userId,
           user_message: event.message.text,
@@ -31,19 +34,21 @@ app.post('/webhook',
           timeout: 25000
         });
 
-        // ดึง reply จาก APEX
+        console.log('3. APEX ตอบ:', JSON.stringify(response.data));
+
         const replyText = response.data.reply_text || 'ได้รับข้อความแล้วครับ';
 
-        // Node.js ส่งกลับ LINE เอง
+        console.log('4. กำลังส่งกลับ LINE...');
+
         await lineClient.replyMessage(event.replyToken, {
           type: 'text',
           text: replyText
         });
 
-      } catch (err) {
-        console.error('Error:', err.message);
+        console.log('5. ส่งกลับ LINE สำเร็จ');
 
-        // ถ้า APEX Error ยังตอบ LINE ได้
+      } catch (err) {
+        console.error('Error ที่ step:', err.message);
         await lineClient.replyMessage(event.replyToken, {
           type: 'text',
           text: 'ขออภัย เกิดข้อผิดพลาดครับ'
