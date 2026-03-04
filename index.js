@@ -28,7 +28,7 @@ app.post('/webhook',
           reply_token:  event.replyToken
         }, {
           headers: { 'Content-Type': 'application/json' },
-          timeout: 8000
+          timeout: 25000
         });
 
         // ดึง reply จาก APEX
