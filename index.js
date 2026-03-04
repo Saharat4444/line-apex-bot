@@ -1,6 +1,7 @@
-const express = require('express');
-const line    = require('@line/bot-sdk');
-const axios   = require('axios');
+const express  = require('express');
+const line     = require('@line/bot-sdk');
+const axios    = require('axios');
+const https    = require('https');  // เพิ่มบรรทัดนี้
 
 const app = express();
 
@@ -10,6 +11,9 @@ const lineConfig = {
 };
 
 const lineClient = new line.Client(lineConfig);
+
+// เพิ่ม agent นี้
+const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 app.post('/webhook',
   line.middleware(lineConfig),
@@ -30,15 +34,14 @@ app.post('/webhook',
           user_message: event.message.text,
           reply_token:  event.replyToken
         }, {
-          headers: { 'Content-Type': 'application/json' },
-          timeout: 25000
+          headers:    { 'Content-Type': 'application/json' },
+          timeout:    25000,
+          httpsAgent: httpsAgent  // เพิ่มบรรทัดนี้
         });
 
         console.log('3. APEX ตอบ:', JSON.stringify(response.data));
 
         const replyText = response.data.reply_text || 'ได้รับข้อความแล้วครับ';
-
-        console.log('4. กำลังส่งกลับ LINE...');
 
         await lineClient.replyMessage(event.replyToken, {
           type: 'text',
