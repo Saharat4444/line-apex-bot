@@ -11,7 +11,6 @@ const lineConfig = {
 
 const lineClient = new line.Client(lineConfig);
 
-// รับ Webhook จาก LINE → Forward ไป APEX
 app.post('/webhook',
   line.middleware(lineConfig),
   async (req, res) => {
@@ -22,17 +21,16 @@ app.post('/webhook',
       if (event.message.type !== 'text') continue;
 
       try {
-        // ส่งไป APEX โดยใส่ค่าใน HTTP Header
-        await axios.post(process.env.APEX_URL, {}, {
-          headers: {
-            'user_id':      event.source.userId,
-            'user_message': event.message.text,
-            'reply_token':  event.replyToken,
-            'Content-Type': 'application/json'
-          }
+        // ส่งเป็น JSON Body แทน Header
+        await axios.post(process.env.APEX_URL, {
+          user_id:      event.source.userId,
+          user_message: event.message.text,
+          reply_token:  event.replyToken
+        }, {
+          headers: { 'Content-Type': 'application/json' }
         });
       } catch (err) {
-        console.error('Error:', err.message);
+        console.error('APEX Error:', err.message);
       }
     }
   }
